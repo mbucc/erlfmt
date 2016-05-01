@@ -1,0 +1,3 @@
+#! /bin/sh
+
+erl erl -noshell -s erlfmt fmt -s init stop
