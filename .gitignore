@@ -1,0 +1,3 @@
+erlfmt
+*.dump
+*.beam
