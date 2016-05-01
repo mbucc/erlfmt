@@ -1,10 +1,10 @@
-%    Copyright (c) 2016d, Mark Bucciarelli <mkbucc@gmail.com>
-%    
+%    Copyright (c) 2016, Mark Bucciarelli <mkbucc@gmail.com>
+%
 %    Permission to use, copy, modify, and/or distribute this software
 %    for any purpose with or without fee is hereby granted, provided
 %    that the above copyright notice and this permission notice appear
 %    in all copies.
-%    
+%
 %    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
 %    WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
 %    WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
@@ -13,7 +13,7 @@
 %    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 %    TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 %    PERFORMANCE OF THIS SOFTWARE.
-    
+
 -module(erlfmt).
 -export([fmt/0]).
 
@@ -41,7 +41,11 @@ assertNoDot(_) ->
     io:put_chars(standard_error, "erlfmt: dot must be at end of line\n"),
     halt(1).
 
-% Write any leading whitespace and comment tokens that come before form.
+% Write leading whitespace and comments, then parse the remaining
+% tokens into a form and pretty-print it.
+%
+% We drop non-leading whitespace and comment tokens because erl_parse:form
+% doesn't work if we leave them in.
 write([{white_space,_,Text}|Tokens]) ->
     io:fwrite("~s", [Text]),
     write(Tokens);
@@ -50,14 +54,20 @@ write([{comment,_,Text}|Tokens]) ->
     write(Tokens);
 write(Tokens) ->
     FormOnlyTokens = lists:filter(fun formify/1, Tokens),
-    {ok,Form} = erl_parse:parse_form(FormOnlyTokens),
-    io:fwrite("~s", [erl_pp:form(Form)]).
+    case erl_parse:parse_form(FormOnlyTokens) of
+        {ok,Form} ->
+            io:fwrite("~s", [erl_pp:form(Form)]);
+        {error,Error} ->
+            io:fwrite("erlfmt: ~p~nTokens=~p~n",
+                      [Error,Tokens])
+    end.
+
 	
 % Read stdin line-by-line, parsing each line into tokens.
-% When we find a line that ends in a dot, print the form to 
+% When we find a line that ends in a dot, print the form to
 % stdout.
 fmt([{dot,N}|ReversedTokens], _) ->
-    assertNoDot([ 
+    assertNoDot([
                  X ||
                      {dot,_} = X <- ReversedTokens
                 ]),
