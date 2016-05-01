@@ -1,7 +1,7 @@
 -module(erlfmt).
 -export([fmt/0]).
 
-% erl_parse.form doesn't work with whitespace and comment tokens.
+% Filter out tokens that erl_parse.form doesn't support.
 formify({white_space, _, _}) -> false;
 formify({comment, _, _}) -> false;
 formify(_) -> true.
