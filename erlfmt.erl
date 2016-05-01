@@ -6,22 +6,29 @@ formify({white_space, _, _}) -> false;
 formify({comment, _, _}) -> false;
 formify(_) -> true.
 
-% Only works if a dot is always at end of a line.
-fmt([{dot, N}|ReversedTokens]) ->
+% Give user a clue if nothing happens.
+help(true) -> ok;
+help(false) ->
+    io:fwrite("erlfmt: no forms found, try removing any whitespace "
+              "after the terminating \"dot\"'s in your code.~n",
+              []).
+
+fmt([{dot, N}|ReversedTokens], _) ->
 	Tokens = lists:reverse(ReversedTokens) ++ [{dot, N}],
 	FormOnlyTokens = lists:filter(fun formify/1, Tokens),
 	{ok, Form} = erl_parse:parse_form(FormOnlyTokens),
 	io:fwrite("~s", [erl_pp:form(Form)]),
-	fmt([]);
+	fmt([], true);
 
-fmt(ReversedTokens) ->
+fmt(ReversedTokens, FoundAForm) ->
 	case io:get_line('') of
-		eof -> 
+		eof ->
+			help(FoundAForm),
 			halt();
 		Data ->
 			{ok, Tokens, _} = erl_scan:string(Data, 0, return),
-			fmt(lists:reverse(Tokens) ++ ReversedTokens)
+			fmt(lists:reverse(Tokens) ++ ReversedTokens, FoundAForm)
 	end.
 
 fmt() ->
-	fmt([]).
+	fmt([], false).
