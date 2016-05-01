@@ -13,7 +13,15 @@ help(false) ->
               "after the terminating \"dot\"'s in your code.~n",
               []).
 
+% This module's logic assumes that a dot always appears at the end of a line.
+% If we find a dot that doesn't follow this rule, let user know and abort.
+assertNoDot([]) -> ok;
+assertNoDot(_) ->
+	io:put_chars(standard_error, "erlfmt: dot must be at end of line\n"),
+	halt(1).
+
 fmt([{dot, N}|ReversedTokens], _) ->
+	assertNoDot([X || {dot, _} = X <- ReversedTokens]),
 	Tokens = lists:reverse(ReversedTokens) ++ [{dot, N}],
 	FormOnlyTokens = lists:filter(fun formify/1, Tokens),
 	{ok, Form} = erl_parse:parse_form(FormOnlyTokens),
