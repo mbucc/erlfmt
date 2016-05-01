@@ -1,0 +1,9 @@
+Utility to format Erlang code.  Reads source code on stdin and sends
+formatted output to stdout.
+
+    Warning! 
+    
+    This utility deletes any comments that are not before the start
+    of an Erlang form.  So comments before a function should be
+    preserved, but any comments inside the function body will be
+    deleted.
