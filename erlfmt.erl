@@ -46,20 +46,28 @@ assertNoDot(_) ->
 %
 % We drop non-leading whitespace and comment tokens because erl_parse:form
 % doesn't work if we leave them in.
+%
+% Note: erl_parse does not deal with "pre-processor juju" [R. Carlsson].
+% See: http://erlang.org/pipermail/erlang-questions/2009-March/042225.html
+%
 write([{white_space,_,Text}|Tokens]) ->
     io:fwrite("~s", [Text]),
     write(Tokens);
 write([{comment,_,Text}|Tokens]) ->
     io:fwrite("~s", [Text]),
     write(Tokens);
+write([{'-',0},{atom,0,define}|Rest]) ->
+    io:fwrite(standard_error,
+              "erlfmt: define is not supported~nTokens=~p~n",
+              [[{'-',0},{atom,0,define}|Rest]]),
+    halt(1);
 write(Tokens) ->
     FormOnlyTokens = lists:filter(fun formify/1, Tokens),
     case erl_parse:parse_form(FormOnlyTokens) of
         {ok,Form} ->
             io:fwrite("~s", [erl_pp:form(Form)]);
         {error,Error} ->
-            io:fwrite("erlfmt: ~p~nTokens=~p~n",
-                      [Error,Tokens])
+            io:fwrite("erlfmt: ~p~nTokens=~p~n", [Error,FormOnlyTokens])
     end.
 
 	
