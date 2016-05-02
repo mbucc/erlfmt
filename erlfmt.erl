@@ -41,6 +41,27 @@ assertNoDot(_) ->
     io:put_chars(standard_error, "erlfmt: dot must be at end of line\n"),
     halt(1).
 
+matches(_Text, []) ->
+    false;
+matches(Text, [H|T]) ->
+    {ok,MP} = re:compile(H),
+    case re:run(Text, MP) of
+        nomatch ->
+            matches(Text, T);
+        _ ->
+            true
+    end.
+
+% Return true if string contains a macro or define.
+containsPreprocessorJuju(Text) when is_list(Text) ->
+    Regexes =
+        ["^ *-define[(]",
+         "^ *-include[(]",
+         "^ *-include_lib[(]",
+         "[?][_[:alnum:]]+"],
+    matches(Text, Regexes).
+
+
 % Write leading whitespace and comments, then parse the remaining
 % tokens into a form and pretty-print it.
 %
@@ -50,47 +71,53 @@ assertNoDot(_) ->
 % Note: erl_parse does not deal with "pre-processor juju" [R. Carlsson].
 % See: http://erlang.org/pipermail/erlang-questions/2009-March/042225.html
 %
-write([{white_space,_,Text}|Tokens]) ->
-    io:fwrite("~s", [Text]),
-    write(Tokens);
-write([{comment,_,Text}|Tokens]) ->
-    io:fwrite("~s", [Text]),
-    write(Tokens);
-write([{'-',0},{atom,0,define}|Rest]) ->
-    io:fwrite(standard_error,
-              "erlfmt: define is not supported~nTokens=~p~n",
-              [[{'-',0},{atom,0,define}|Rest]]),
-    halt(1);
-write(Tokens) ->
-    FormOnlyTokens = lists:filter(fun formify/1, Tokens),
-    case erl_parse:parse_form(FormOnlyTokens) of
-        {ok,Form} ->
-            io:fwrite("~s", [erl_pp:form(Form)]);
-        {error,Error} ->
-            io:fwrite("erlfmt: ~p~nTokens=~p~n", [Error,FormOnlyTokens])
+write([{X,_,TokenText}|Tokens], RawText)
+    when X == white_space; X == comment ->
+    case containsPreprocessorJuju(RawText) of
+        true ->
+            io:put_chars(RawText);
+        false ->
+            io:put_chars(TokenText),
+            write(Tokens, RawText)
+    end;
+write(Tokens, RawText) ->
+    case containsPreprocessorJuju(RawText) of
+        true ->
+            io:put_chars(RawText);
+        false ->
+            FormOnlyTokens = lists:filter(fun formify/1, Tokens),
+            case erl_parse:parse_form(FormOnlyTokens) of
+                {ok,Form} ->
+                    io:fwrite("~s", [erl_pp:form(Form)]);
+                {error,Error} ->
+                    io:fwrite("erlfmt: ~p~nTokens=~p~n",
+                              [Error,FormOnlyTokens])
+            end
     end.
 
 	
 % Read stdin line-by-line, parsing each line into tokens.
 % When we find a line that ends in a dot, print the form to
 % stdout.
-fmt([{dot,N}|ReversedTokens], _) ->
-    assertNoDot([
+fmt([{dot,N}|Tokens], _, RawText) ->
+    assertNoDot([ 
                  X ||
-                     {dot,_} = X <- ReversedTokens
+                     {dot,_} = X <- Tokens
                 ]),
-    Tokens = lists:reverse(ReversedTokens) ++ [{dot,N}],
-    write(Tokens),
-    fmt([], true);
-fmt(ReversedTokens, FoundAForm) ->
+    T = lists:reverse(Tokens) ++ [{dot,N}],
+    write(T, lists:reverse(RawText)),
+    fmt([], true, "");
+fmt(Tokens, FoundAForm, RawText) ->
     case io:get_line('') of
         eof ->
             help(FoundAForm),
             halt();
         Data ->
-            {ok,Tokens,_} = erl_scan:string(Data, 0, return),
-            fmt(lists:reverse(Tokens) ++ ReversedTokens, FoundAForm)
+            {ok,T,_} = erl_scan:string(Data, 0, return),
+            fmt(lists:reverse(T) ++ Tokens,
+                FoundAForm,
+                lists:reverse(Data) ++ RawText)
     end.
 
 fmt() ->
-    fmt([], false).
+    fmt([], false, "").
