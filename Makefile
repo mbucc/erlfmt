@@ -1,9 +1,13 @@
 erlfmt.beam: erlfmt.erl
 	erlc erlfmt.erl
 
-install: erlfmt.beam
-	cp erlfmt ${HOME}/bin/
+install: ${HOME}/bin/erlfmt.beam ${HOME}/bin/erlfmt
+
+${HOME}/bin/erlfmt.beam: erlfmt.beam
 	cp erlfmt.beam ${HOME}/bin/
+
+${HOME}/bin/erlfmt: erlfmt
+	cp erlfmt ${HOME}/bin/
 
 clean::
 	rm -f *.beam

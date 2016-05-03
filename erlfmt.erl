@@ -113,7 +113,8 @@ fmt(Tokens, FoundAForm, RawText) ->
             help(FoundAForm),
             halt();
         Data ->
-	    TrimmedData = re:replace(Data, "\\.[ \\t]+$", ".", [{return, list}]),
+            TrimmedData =
+                re:replace(Data, "\\.[ \\t]+$", ".", [{return,list}]),
             {ok,T,_} = erl_scan:string(TrimmedData, 0, return),
             fmt(lists:reverse(T) ++ Tokens,
                 FoundAForm,
