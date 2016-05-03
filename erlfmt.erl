@@ -18,9 +18,7 @@
 -export([fmt/0]).
 
 % Filter out tokens that erl_parse.form doesn't support.
-formify({white_space,_,_}) ->
-    false;
-formify({comment,_,_}) ->
+formify({X,_,_}) when X == white_space; X == comment ->
     false;
 formify(_) ->
     true.
