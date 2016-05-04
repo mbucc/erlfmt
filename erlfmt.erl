@@ -23,7 +23,7 @@ formify({X,_,_}) when X == white_space; X == comment ->
 formify(_) ->
     true.
 
-% Give user a clue if nothing happens.
+% Give user a clue if nothing was output.
 help(true) ->
     ok;
 help(false) ->
@@ -33,9 +33,9 @@ help(false) ->
 
 % This module's logic assumes that a dot always appears at the end of a line.
 % If we find a dot that doesn't follow this rule, let user know and abort.
-assertNoDot([]) ->
+assertOneDot([{dot,_}]) ->
     ok;
-assertNoDot(_) ->
+assertOneDot(_) ->
     io:put_chars(standard_error, "erlfmt: dot must be at end of line\n"),
     halt(1).
 
@@ -84,6 +84,10 @@ write(Tokens, RawText) ->
             io:put_chars(RawText);
         false ->
             FormOnlyTokens = lists:filter(fun formify/1, Tokens),
+            assertOneDot([
+                          X ||
+                              {dot,_} = X <- FormOnlyTokens
+                         ]),
             case erl_parse:parse_form(FormOnlyTokens) of
                 {ok,Form} ->
                     io:fwrite("~s", [erl_pp:form(Form)]);
@@ -95,13 +99,8 @@ write(Tokens, RawText) ->
 
 	
 % Read stdin line-by-line, parsing each line into tokens.
-% When we find a line that ends in a dot, print the form to
-% stdout.
+% When we find a terminating dot, print the form to stdout.
 fmt([{dot,N}|Tokens], _, RawText) ->
-    assertNoDot([ 
-                 X ||
-                     {dot,_} = X <- Tokens
-                ]),
     T = lists:reverse(Tokens) ++ [{dot,N}],
     write(T, lists:reverse(RawText)),
     fmt([], true, "");
