@@ -123,18 +123,10 @@ Final attempt: call escript from a shell script
 The back story back story.
 
     Why such a long README?  Erlang questions mailing list recently had an
-    interesting thread on code documentation. (It was a long thread, with the
-    word "rhetorical" in the subject.)  A lot of things were said, but one in
-    particular stuck: Joe Armstrong said that documentation in code hardly
-    ever shows the starts and stops, the litany of failed experiments that
-    you encounter on the way to the final product.  Some of which may be
-    useful at some later point
-
-    That thread also prompted me to read up on Donald Knuth's favorite
-    programming language: CWEB, in which you first write a story that
-    describes what your program does and then you write the code to match the
-    story (I am paraphrasing).
-
-    The amount of final code was so out of proportion to all the stumbling
-    around I did to finally get there that the story seemed worth writing.
+    interesting thread on code documentation.  It was a long thread
+    ("rhetorical structure of code") and a lot of things were said, but one in
+    particular stuck with me: code documentation rarely shows the starts and
+    stops, the litany of failed experiments that you encounter on the way to
+    the final product.  And that those failed experiements are sometimes
+    useful in the future.
 
