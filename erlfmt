@@ -3,5 +3,5 @@
 
 TMPF=$(mktemp -t $(basename $0))
 cat - > $TMPF
-./erlfmt.escript "$TMPF"
+erlfmt.escript "$TMPF"
 rm $TMPF
