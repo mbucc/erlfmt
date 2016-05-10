@@ -2,22 +2,24 @@ Read Erlang source on stdin, reformat with erl_tidy, and write to stdout.
 No options, you get what erl_prettypr:format/2 gives you.
 
 
-				  Back story
+                                  Back story
 
 
     The problem seemed simple: read Erlang source code on stdin and send a
     nicely formatted result to stdout.  In vim, I got used to this when I was
     learning Go:
 
-		:%!gofmt
+            :%!gofmt
 
-    I now have xmlfmt, jsfmt, javafmt and wanted one for Erlang.
+    Just type the code without any concern for formatting, and then format the
+    entire file in one command.  I now have xmlfmt, jsfmt, javafmt and I
+    wanted a similar utility for Erlang.
 
     I started with erl_tidy, which
 
-	  Tidies and pretty-prints Erlang source code, removing
-	  unused functions, updating obsolete constructs and
-	  function calls, etc.
+            Tidies and pretty-prints Erlang source code, removing
+            unused functions, updating obsolete constructs and
+            function calls, etc.
 
     Seems perfect ... except that erl_tidy does not read from stdin.  I posted
     a question to the Erlang questions mailing list asking if I missed
@@ -26,7 +28,6 @@ No options, you get what erl_prettypr:format/2 gives you.
     and a state-machine/parser written in Erlang that the vim Erlang module
     uses.  The first two didn't solve my problem, and I didn't like the
     complexity of the third approach.
-
 
 First attempt: use basic Erlang modules
     
@@ -47,7 +48,7 @@ First attempt: use basic Erlang modules
     includes a pre-processor construct, just print out the raw text that
     generated those tokens and leave it at that.
 
-    When that was done, I decided dropping comments not good enough.  While
+    When that was done, I decided dropping comments was not acceptable.  While
     searching around for how to re-insert comments, I came across a reference
     to the epp_dodger module and a function that re-inserts comments.  Both of
     which is used by erl_tidy.  It seemed stupid to re-write erl_tidy so I
@@ -76,12 +77,12 @@ Third attempt: call erl_tidy:file/1 from a shell script.
     Calling erl_tidy from the shell script was not.  My first attempt looked
     like this:
 
-        $ erl -run erl_tidy file $TMPFN
+            $ erl -run erl_tidy file $TMPFN
 
     which produced:
 
-        =ERROR REPORT==== 9-May-2016::20:13:30 ===
-        erl_comment_scan: bad filename: `['hmmmm_sup.erl']'
+            =ERROR REPORT==== 9-May-2016::20:13:30 ===
+            erl_comment_scan: bad filename: `['hmmmm_sup.erl']'
 
     and hung there, waiting in the Erlang interpreter.
 
@@ -100,33 +101,33 @@ Final attempt: call escript from a shell script
     The result: I was able to erlfmt all 1,795 source files under
     /usr/local/Cellar/erlang/18.2.1, with only one error:
 
-        /usr/local/Cellar/erlang/18.2.1/lib/erlang/lib/wx-1.6/src/gen/gl.erl
-        ./erlfmt: line 6: 25399 User defined signal 2: 31 ./erlfmt.escript "$TMPF"
+            /usr/local/Cellar/erlang/18.2.1/lib/erlang/lib/wx-1.6/src/gen/gl.erl
+            ./erlfmt: line 6: 25399 User defined signal 2: 31 ./erlfmt.escript "$TMPF"
 
     That file is a generated one, and is 971KB in size.  I got the above error
     when I had erl_tidy write the reformatted file to the temporary file.
     When instead I told erl_tidy to write the result to stdout, I got this
     error:
 
-        escript: exception exit: badarg
-          in function  erl_tidy:file/2 (erl_tidy.erl, line 295)
-          in call from erl_eval:local_func/6 (erl_eval.erl, line 557)
-          in call from escript:interpret/4 (escript.erl, line 787)
-          in call from escript:start/1 (escript.erl, line 277)
-          in call from init:start_it/1 
-          in call from init:start_em/1 
-        
+            escript: exception exit: badarg
+              in function  erl_tidy:file/2 (erl_tidy.erl, line 295)
+              in call from erl_eval:local_func/6 (erl_eval.erl, line 557)
+              in call from escript:interpret/4 (escript.erl, line 787)
+              in call from escript:start/1 (escript.erl, line 277)
+              in call from init:start_it/1 
+              in call from init:start_em/1 
+            
     It successfully parsed the other 1,794 files, which gives success rate of
-    0.99945.  Not to hot in the Erlang world, but I don't expect to be
+    0.99945.  Not too hot in the Erlang world, but I don't expect to be
     formatting files that big.  Good enough.
 
 The back story back story.
 
     Why such a long README?  Erlang questions mailing list recently had an
-    interesting thread on code documentation.  It was a long thread
-    ("rhetorical structure of code") and a lot of things were said, but one in
-    particular stuck with me: code documentation rarely shows the starts and
-    stops, the litany of failed experiments that you encounter on the way to
-    the final product.  And that those failed experiements are sometimes
-    useful in the future.
+    interesting thread on code documentation ("rhetorical structure of code").
+    It was a long thread and a lot of things were said, but one in particular
+    stuck with me: code documentation rarely shows the starts and stops, the
+    litany of failed experiments that you encounter on the way to the final
+    product.  And that those failed experiements are sometimes useful in the
+    future.
 
