@@ -1,3 +1,7 @@
-#! /bin/sh
+#! /bin/sh -e
+# Run erl_tidy on stdin and send result to stdout.
 
-erl -noshell -pa $HOME/bin -s erlfmt fmt -s init stop
+TMPF=$(mktemp -t $(basename $0))
+cat - > $TMPF
+./erlfmt.escript "$TMPF"
+rm $TMPF

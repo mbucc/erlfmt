@@ -1,9 +1,130 @@
-Utility to format Erlang code.  Reads source code on stdin and sends
-formatted output to stdout.
+Read Erlang source on stdin, reformat with erl_tidy, and write to stdout.
+No options, you get what erl_prettypr:format/2 gives you.
 
-    Warning! 
+
+				  Backstory
+
+
+    The problem seemed simple: read Erlang source code on stdin and send a
+    nicely formatted result to stdout.  In vim, I have become accustomed to
+    having code format utilities that run from the command line.  I got used
+    to having this available while I was learning Go, and have since written
+    xmlfmt, javafmt, jsfmt, etc.  I wanted one for Erlang.
+
+    My journey began with erl_tidy, which
+
+	  Tidies and pretty-prints Erlang source code, removing
+	  unused functions, updating obsolete constructs and
+	  function calls, etc.
+
+    Seems perfect, but erl_tidy does not read from stdin; you have to give it
+    a file name.  I posted a question to the erlang questions mailing list
+    asking if I could make erl_tidy read from stdin, and the answer was no.
+    People pointed me to alternative approaches: an Emacs elisps module, a
+    rebar3 module that wraps erl_tidy, and a state-machine/parser written in
+    Erlang that the vim Erlang module uses.
+
+
+First attempt: use basic Erlang modules
     
-    This utility deletes any comments that are not before the start
-    of an Erlang form.  So comments before a function should be
-    preserved, but any comments inside the function body will be
-    deleted.
+    While Googling around, I found a short post showing how you can format
+    Erlang code using erl_scan (string -> tokens), erl_parse (tokens -> forms)
+    and erl_pp (forms -> string).  So I started coding that up.  And it worked
+    great, intially.
+
+    The first problem I hit: erl_parse:parse_form/1 does not handle whitespace
+    or comment tokens.  Ok, no problem to keep forward progress I implemented
+    the quick hack of only dropping comments that came inside a form, and
+    printing the leading comments and whitespace that came before a form.  Not
+    great, but I wanted to push forward and get something working end-to-end.
+
+    The next problem I hit was pre-processor syntax.  It turns out that
+    erl_parse does not understand pre-processor bits (like macros and
+    imports).  Another hack: just print and form with pre-processor juju as is
+    and bypass erl_parse completely.
+
+    While searching around for how to re-insert comments, I came across a
+    reference to the epp_dodger module.  Turns out that is used by erl_tidy,
+    so now I'm back to where I started.
+
+Second attempt: teach erl_tidy about stdin
+
+    Erlang can read stdin just fine, most of the input functions in the io
+    module read from stdin by default.  I started hacking on erl_tidy,
+    intending to use the "special" filename of a single dash (-) to tell
+    erl_tidy to read from stdin.  In addition, Erlang provides the standard_io
+    atom that you can use for an IODevice argument.
+
+    It was simple to add a new read_module("-", Opts) and pass standard_io to
+    epp_dodger:parse/3.  But, the next chunk of erl_tidy logic reads comments
+    from the same file again!  Not possible with stdin, since the stream was
+    already consumed by epp_dodger:parse/3.
+
+    I briefly looking to see if I could somehow turn a string into an IODevice
+    (like you can in Java), but nothing turned up.  So, it seems like I have
+    to write stdin to a file in order to use erl_tidy.
+
+Third attempt: call erl_tidy:file/1 from a shell script.
+
+    It was easy enough to write a shell script that pipes stdin to a file.
+    Calling erl_tidy from the shell script was not as simple.  My first
+    attempt looked like this:
+
+        $ erl -run erl_tidy file $TMPFN
+
+    which produced:
+
+        =ERROR REPORT==== 9-May-2016::20:13:30 ===
+        erl_comment_scan: bad filename: `['hmmmm_sup.erl']'
+
+    and hung there, waiting in the Erlang interpreter.
+
+    It turns out that when use the -run flag and pass it arguments, Erlang
+    assumes the recieving function has one argument---a list.  That's why the
+    filename in the error message has brackets around it ... it's an array.
+    
+Final attempt: call escript from a shell script
+
+    The final result is what you see in this repository now.   It's so easy to
+    handle piping the stdin to a file in the shell script that I kept that in
+    place and added an escript that simply unpacks the file name from the list
+    and calls erl_tidy.
+
+    The result: I was able to erlfmt all 1,795 source files under
+    /usr/local/Cellar/erlang/18.2.1, with only one error:
+
+        /usr/local/Cellar/erlang/18.2.1/lib/erlang/lib/wx-1.6/src/gen/gl.erl
+        ./erlfmt: line 6: 25399 User defined signal 2: 31 ./erlfmt.escript "$TMPF"
+
+    That file is a generated one, and is 971KB in size.  I got the above error
+    when I had erl_tidy write the reformatted file to the temporary file, and
+    when I passed the {stdout, true} option to erl_tidy, I get this one:
+
+        escript: exception exit: badarg
+          in function  erl_tidy:file/2 (erl_tidy.erl, line 295)
+          in call from erl_eval:local_func/6 (erl_eval.erl, line 557)
+          in call from escript:interpret/4 (escript.erl, line 787)
+          in call from escript:start/1 (escript.erl, line 277)
+          in call from init:start_it/1 
+          in call from init:start_em/1 
+        
+    It successfully parsed the other 1,794 files, which gives success rate of
+    0.99945.  I don't expect I'll every be formatting an Erlang source file
+    that is that big.  Good enough.
+
+The backstory backstory.
+
+    Why such a long README?  Erlang questions mailing list recently had an
+    interesting thread on code documentation.  It was a long thread, with the
+    word "rhetorical" in the subject.  A lot of things were said, but one in
+    particular stuck: Joe Armstrong said that documentation in code hardly
+    ever shows the starts and stops, the failed experiements that you
+    encounter on the way to the final product.
+
+    That thread also prompted me to read up on Donald Knuth's favorite
+    programming language: CWEB, in which you first write a story that
+    describes what your program does and then you write the code to match the
+    story (I am paraphrasing).
+
+    The amount of final code was so out of proportion to all the stumbling
+    around I did to get there that it seemed worthy of a writeup.
