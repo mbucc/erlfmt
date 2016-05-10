@@ -1,7 +1,7 @@
 #!/usr/bin/env escript
 %%! -shutdown_time 1000
 main([Name]) ->
-	erl_tidy:file(Name, [{stdout, true}]);
+	erl_tidy:file(Name, [{stdout, true}, {keep_unused, true}]);
 main(_) ->
     usage().
 
