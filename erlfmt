@@ -3,5 +3,29 @@
 
 TMPF=$(mktemp -t $(basename $0))
 cat - > $TMPF
-erlfmt.escript "$TMPF"
+
+#
+#   Convert the tabs output by erl_prettypr to eight spaces.
+#
+#   On OSX, I was getting the error
+#
+#           sed: RE error: illegal byte sequence
+#
+#   Per StackOverflow, this error means that the byte-sequence in the file does
+#   not use the same encoding as the shell.  In my specific case, I had some
+#   eunit test cases that included text with some encoded characters.
+#
+#   The fix of setting LC_ALL=C in-line is fine since the only character we care
+#   about matching is the tab character.
+#
+#       However, (effectively) setting LC_CTYPE to C treats strings as if each
+#       byte were its own character (no interpretation based on encoding rules
+#       is performed), with no regard for the - multibyte-on-demand - UTF-8
+#       encoding that OS X employs by default, where foreign characters have
+#       multibyte encodings.
+#
+#   http://stackoverflow.com/questions/19242275/re-error-illegal-byte-sequence-on-mac-os-x
+#
+
+erlfmt.escript "$TMPF" | LC_ALL=C sed 's/	/        /g'
 rm $TMPF
