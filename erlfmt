@@ -1,7 +1,22 @@
 #! /bin/sh -e
 # Run erl_tidy on stdin and send result to stdout.
 
-TMPF=$(mktemp -t $(basename $0))
+#
+#   OSX and GNU/Linux mktemp behave differently with the -t option.
+#
+#       mktemp -t mkb
+#           OSX      : /var/folders/cy/4988f14n4r35fp39wrt1pfq80000gn/T/mkb.UgVBxAPP
+#           GNU/Linux: mktemp: too few X's in template ‘mkb’
+#
+#       mktemp -t mkb.XXXXXX
+#           OSX      : /var/folders/cy/4988f14n4r35fp39wrt1pfq80000gn/T/mkb.XXXXXX.UgVBxAPP
+#           GNU/Linux: /tmp/mkb.pRykUg
+#
+#   So, "manually" add the TMPDIR prefix.
+
+D=${TMP1DIR:-.}
+TMPF=$D/$(mktemp $(basename $0).XXXXXX)
+
 cat - > $TMPF
 
 #
