@@ -21,9 +21,18 @@ cat - > $TMPF
 
 # See https://bugs.erlang.org/browse/ERL-234
 if grep 'coding: *utf-8' $TMPF > /dev/null ; then
-	printf "erl_tidy cannot process files with utf-8 encoding\n" >&2
+	printf "can't handle utf-8 encoding\n" >&2
 	exit 1
 fi
+
+# Some erl files in OTP-19 don't have module statements; for example,
+#      ./lib/hipe/amd64/hipe_amd64_liveness.erl
+# Skip these too.
+if ! grep '^-module' $TMPF > /dev/null ; then
+	printf "no -module() line.\n" >&2
+	exit 1
+fi
+
 
 #
 #   Convert the tabs output by erl_prettypr to eight spaces.
