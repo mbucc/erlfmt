@@ -21,7 +21,7 @@ cat - > $TMPF
 
 # See https://bugs.erlang.org/browse/ERL-234
 if grep 'coding: *utf-8' $TMPF > /dev/null ; then
-	printf "can't handle utf-8 encoding\n" >&2
+	printf "erlfmt: utf-8 encoding\n" >&2
 	exit 1
 fi
 
@@ -29,7 +29,7 @@ fi
 #      ./lib/hipe/amd64/hipe_amd64_liveness.erl
 # Skip these too.
 if ! grep '^-module' $TMPF > /dev/null ; then
-	printf "no -module() line.\n" >&2
+	printf "erlfmt: no -module() line.\n" >&2
 	exit 1
 fi
 
