@@ -19,6 +19,12 @@ TMPF=$D/$(mktemp $(basename $0).XXXXXX)
 
 cat - > $TMPF
 
+# See https://bugs.erlang.org/browse/ERL-234
+if grep 'coding: *utf-8' $TMPF > /dev/null ; then
+	printf "erl_tidy cannot process files with utf-8 encoding\n" >&2
+	exit 1
+fi
+
 #
 #   Convert the tabs output by erl_prettypr to eight spaces.
 #
