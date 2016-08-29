@@ -1,0 +1,75 @@
+2016-08-28  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* erlfmt: Fail if stdin is missing a -module() statement.
+	  OTP-19 has some in the source tree; for example,
+	  ./lib/hipe/amd64/hipe_amd64_liveness.erl.
+
+	* erlfmt: Fail if source files has utf-8 encoding. See
+	  https://bugs.erlang.org/browse/ERL-234.
+
+2016-06-07  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* erlfmt: Use mktemp idiom that works on GNU/Linux as well as OSX.
+
+2016-05-22  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* erlfmt: Convert tabs to space in prettypr output.
+
+2016-05-10  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* README: Minor word smithing.
+
+2016-05-09  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* README: Add long backstory.  Major change in approach---create a
+	  wrapper around erl_tidy instead of trying to recreate the wheel.
+
+	* erlfmt.escript: Set keep_unused option to true so eunit tests are
+	  not deleted.
+
+	* erlfmt: Assume erlfmt.escript is on path.
+
+	* Makefile: New
+
+
+2016-05-03  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* erlfmt.erl: Deal with lines that had comments after the dot.  For
+	  example, -define(TIMEOUT, 20). % milliseconds
+
+2016-05-02  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* erlfmt.erl: Refactor two functions into one function with guards.
+
+	* Makefile, erlfmt.erl: erlfmt erlfmt.erl
+
+	* erlfmt.erl: Trim trailing whitespace after dot before tokenizing.
+	  It's a common for people to leave trailing space at the end of a line
+	  and it is safe to zap it.
+
+	* erlfmt.erl: deal with preprocessor juju.
+
+2016-05-01  Mark Bucciarelli <mkbucc@gmail.com>
+
+	* erlfmt.erl: erl_parse doesn't understand pre-processor juju.
+
+	* erlfmt.erl: On parse error, dump tokens and error message.
+
+	* README: Add README.
+
+	* Makefile, erlfmt: Add install target that installs to $HOME/bin.
+	  Update erlfmt shell script to add $HOME/bin to path.
+
+	* erlfmt.erl: Add license.
+
+	* .gitignore, erlfmt: Add shell script.
+
+	* erlfmt.erl: Output any comments and whitespace before form.
+
+	* erlfmt.erl: Abort if we find a dot not at line ending.
+
+	* erlfmt.erl: Give user a clue if no output.
+
+	* erlfmt.erl: improve comment, no logic change.
+
+	* Works but drops comments.
